@@ -1,0 +1,21 @@
+[project]
+name = "core-dual-shock"
+version = "0.1.0"
+description = "DualShock controller input reader with normalization and deadzone support"
+readme = "README.md"
+authors = [
+    { name = "Sadasue Yuki", email = "yu092519703@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "evdev>=1.7.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.0,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

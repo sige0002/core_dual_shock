@@ -4,13 +4,10 @@ from __future__ import annotations
 
 import evdev
 
+from core_dual_shock.profile_loader import load_all_profiles
 
 # 対応デバイスのVendor/Product ID
-SUPPORTED_DEVICES = {
-    (0x054C, 0x09CC): "DualShock4",  # DualShock4 USB
-    (0x054C, 0x05C4): "DualShock4",  # DualShock4 旧型
-    (0x054C, 0x0CE6): "DualSense",   # DualSense
-}
+_, SUPPORTED_DEVICES = load_all_profiles()
 
 
 class DualShockDevice:

@@ -1,0 +1,36 @@
+# DualSense コントローラープロファイル
+profile_name: "DualSense"
+
+devices:
+  - vendor_id: 0x054C
+    product_id: 0x0CE6
+    description: "DualSense"
+
+sticks:
+  left_x:  { code: "ABS_X",  min: 0, max: 255 }
+  left_y:  { code: "ABS_Y",  min: 0, max: 255 }
+  right_x: { code: "ABS_RX", min: 0, max: 255 }
+  right_y: { code: "ABS_RY", min: 0, max: 255 }
+
+triggers:
+  L2: { code: "ABS_Z",  min: 0, max: 255 }
+  R2: { code: "ABS_RZ", min: 0, max: 255 }
+
+buttons:
+  triangle: "BTN_NORTH"
+  circle:   "BTN_EAST"
+  cross:    "BTN_SOUTH"
+  square:   "BTN_WEST"
+  L1:       "BTN_TL"
+  R1:       "BTN_TR"
+  L3:       "BTN_THUMBL"
+  R3:       "BTN_THUMBR"
+  select:   "BTN_SELECT"
+  start:    "BTN_START"
+  ps:       "BTN_MODE"
+  touchpad: 547
+
+dpad:
+  type: "hat"
+  hat_x: "ABS_HAT0X"
+  hat_y: "ABS_HAT0Y"

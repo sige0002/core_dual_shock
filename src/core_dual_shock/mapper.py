@@ -3,77 +3,10 @@
 送信周期のタイミングで呼ばれ、InputSnapshotを統一フォーマットに変換する。
 """
 
-from evdev import ecodes
-
 from core_dual_shock.input_state import InputSnapshot
+from core_dual_shock.profile_loader import load_all_profiles
 
-# デバイスプロファイル定義
-PROFILES = {
-    "DualShock4": {
-        "vendor": 0x054C,
-        "sticks": {
-            "left_x": {"code": ecodes.ABS_X, "min": 0, "max": 255},
-            "left_y": {"code": ecodes.ABS_Y, "min": 0, "max": 255},
-            "right_x": {"code": ecodes.ABS_RX, "min": 0, "max": 255},
-            "right_y": {"code": ecodes.ABS_RY, "min": 0, "max": 255},
-        },
-        "triggers": {
-            "L2": {"code": ecodes.ABS_Z, "min": 0, "max": 255},
-            "R2": {"code": ecodes.ABS_RZ, "min": 0, "max": 255},
-        },
-        "buttons": {
-            "triangle": ecodes.BTN_NORTH,
-            "circle": ecodes.BTN_EAST,
-            "cross": ecodes.BTN_SOUTH,
-            "square": ecodes.BTN_WEST,
-            "L1": ecodes.BTN_TL,
-            "R1": ecodes.BTN_TR,
-            "L3": ecodes.BTN_THUMBL,
-            "R3": ecodes.BTN_THUMBR,
-            "select": ecodes.BTN_SELECT,
-            "start": ecodes.BTN_START,
-            "ps": ecodes.BTN_MODE,
-            "touchpad": ecodes.BTN_THUMBR + 1,  # デバイス固有値
-        },
-        "dpad_type": "hat",
-        "dpad": {
-            "hat_x": ecodes.ABS_HAT0X,
-            "hat_y": ecodes.ABS_HAT0Y,
-        },
-    },
-    "DualSense": {
-        "vendor": 0x054C,
-        "sticks": {
-            "left_x": {"code": ecodes.ABS_X, "min": 0, "max": 255},
-            "left_y": {"code": ecodes.ABS_Y, "min": 0, "max": 255},
-            "right_x": {"code": ecodes.ABS_RX, "min": 0, "max": 255},
-            "right_y": {"code": ecodes.ABS_RY, "min": 0, "max": 255},
-        },
-        "triggers": {
-            "L2": {"code": ecodes.ABS_Z, "min": 0, "max": 255},
-            "R2": {"code": ecodes.ABS_RZ, "min": 0, "max": 255},
-        },
-        "buttons": {
-            "triangle": ecodes.BTN_NORTH,
-            "circle": ecodes.BTN_EAST,
-            "cross": ecodes.BTN_SOUTH,
-            "square": ecodes.BTN_WEST,
-            "L1": ecodes.BTN_TL,
-            "R1": ecodes.BTN_TR,
-            "L3": ecodes.BTN_THUMBL,
-            "R3": ecodes.BTN_THUMBR,
-            "select": ecodes.BTN_SELECT,
-            "start": ecodes.BTN_START,
-            "ps": ecodes.BTN_MODE,
-            "touchpad": ecodes.BTN_THUMBR + 1,  # デバイス固有値
-        },
-        "dpad_type": "hat",
-        "dpad": {
-            "hat_x": ecodes.ABS_HAT0X,
-            "hat_y": ecodes.ABS_HAT0Y,
-        },
-    },
-}
+PROFILES, _ = load_all_profiles()
 
 
 class Mapper:

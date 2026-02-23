@@ -231,6 +231,20 @@ tests/
 └── test_tkg_transmitter.py  # TKGプロトコルの単体テスト（47件）
 ```
 
+## 仮想シリアルポートでの通信テスト
+
+実機なしで送受信テストができます。Python標準ライブラリの `pty` を使うため、追加パッケージは不要です。
+
+```bash
+# ターミナル1: 仮想シリアル受信側
+uv run python tools/virtual_serial_receiver.py
+
+# ターミナル2: 表示されたポートを指定して送信
+uv run python -m core_dual_shock --port /dev/pts/XX
+```
+
+詳細は [README.md](README.md#仮想シリアルポートでの通信テスト) を参照してください。
+
 ## トラブルシューティング
 
 ### `DualShock controller not found`

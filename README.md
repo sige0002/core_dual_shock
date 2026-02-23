@@ -348,6 +348,38 @@ uv run python -m pytest tests/ -v
 uv run python -m pytest tests/test_tkg_transmitter.py -v
 ```
 
+### 仮想シリアルポートでの通信テスト
+
+実機（USB-シリアル変換器やRaspberry Pi）がなくても、Python標準ライブラリの `pty` を使って仮想シリアルポートペアを作成し、送受信テストができます。追加パッケージのインストールは不要です。
+
+**ターミナル1** — 仮想シリアル受信側を起動:
+
+```bash
+uv run python tools/virtual_serial_receiver.py
+```
+
+起動すると仮想ポートのパスが表示されます:
+
+```
+仮想シリアルポート: /dev/pts/3
+
+別ターミナルで以下を実行:
+  uv run python -m core_dual_shock --port /dev/pts/3
+```
+
+**ターミナル2** — 表示されたポートを指定して core_dual_shock を起動:
+
+```bash
+uv run python -m core_dual_shock --port /dev/pts/3
+```
+
+受信側にデコード済みのフレームがリアルタイムで表示されます:
+
+```
+#   1 [24,00,00,00,00,80,f6]
+  ts=1 estop=Y dtype=1 vel=(  +0,  +0,  +0) whl=0 fire=0 tai=0 hand=0 ang=0 spd=slow mg=0 crc=OK
+```
+
 TKG Transmitter のテストはモックを使用するため、コントローラーやシリアルデバイスがなくても実行できます。
 
 | テストカテゴリ | 件数 | 検証内容 |

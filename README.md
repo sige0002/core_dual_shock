@@ -12,11 +12,12 @@ DualShock / DualSense コントローラーの入力を読み取り、正規化�
 
 ```
 src/core_dual_shock/
-├── device.py          # evdevでコントローラーを自動検出し、イベント読み取りを提供
-├── input_state.py     # 全チャンネルの生値をスレッドセーフに保持し、スナップショットを返す
-├── mapper.py          # デバイスプロファイルに基づき正規化・デッドゾーン処理を行う
-├── profile_loader.py  # profiles/ 内のYAMLを読み込み、evdevコードを解決する
-├── main.py            # DualShockReaderクラス（イテレータ）とCLIエントリーポイント
+├── device.py            # evdevでコントローラーを自動検出し、イベント読み取りを提供
+├── input_state.py       # 全チャンネルの生値をスレッドセーフに保持し、スナップショットを返す
+├── mapper.py            # デバイスプロファイルに基づき正規化・デッドゾーン処理を行う
+├── profile_loader.py    # profiles/ 内のYAMLを読み込み、evdevコードを解決する
+├── main.py              # DualShockReaderクラス（イテレータ）とCLIエントリーポイント
+├── tkg_transmitter.py   # TKG通信プロトコル実装（フレーム組み立て・シリアル送信）
 └── profiles/
     ├── dualshock4.yaml  # DualShock4のボタン/軸/デバイスID定義
     └── dualsense.yaml   # DualSenseのボタン/軸/デバイスID定義
@@ -34,29 +35,46 @@ src/core_dual_shock/
 - Linux
 - Python 3.12 以上
 - uv
+- DualShock 4 または DualSense がUSBまたはBluetoothで接続済み
 
 ## セットアップ
 
-### 1. uv のインストール
+### 1. システムパッケージのインストール
+
+Python拡張モジュールのビルドやevdevの利用に必要なパッケージをインストールします。
+
+```bash
+sudo apt update
+sudo apt install -y build-essential python3-dev libffi-dev libudev-dev
+```
+
+| パッケージ | 用途 |
+|---|---|
+| `build-essential` | gcc, make 等のビルドツール一式 |
+| `python3-dev` | Python C拡張のヘッダファイル |
+| `libffi-dev` | ctypes / cffi のビルドに必要 |
+| `libudev-dev` | evdev のビルドに必要 |
+
+### 2. uv のインストール
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 2. リポジトリのクローン
+### 3. リポジトリのクローン
 
 ```bash
 git clone https://github.com/sadasue/core_dual_shock.git
 cd core_dual_shock
 ```
 
-### 3. 依存パッケージのインストール
+### 4. 依存パッケージのインストール
 
 ```bash
 uv sync
 ```
 
-### 4. デバイスの権限設定
+### 5. デバイスの権限設定
 
 evdev でコントローラーにアクセスするには、`/dev/input/event*` への読み取り権限が必要です。
 
@@ -223,6 +241,47 @@ except KeyboardInterrupt:
 | `"L2"` | L2 トリガー | 0 |
 | `"R2"` | R2 トリガー | 0 |
 
+## TKG Transmitter（TKG通信プロトコル送信）
+
+コントローラーの入力をTKG通信プロトコル（7バイトフレーム）に変換し、シリアルポート経由で送信する機能です。
+
+### TKG送信モード
+
+```bash
+uv run python -m core_dual_shock --port /dev/ttyUSB0
+```
+
+起動すると `TKG mode: /dev/ttyUSB0 @ 115200bps` と表示され、50Hzでコントローラー入力をTKGプロトコルに変換して送信します。
+
+### ドライランモード（シリアル接続なしで動作確認）
+
+```bash
+uv run python -m core_dual_shock --dry-run
+```
+
+シリアルデバイスなしでフレーム変換を検証できます。パック済みバイト列を逆符号化して全フィールド・CRC8検算・実測送信Hz・フレーム通番を表示します。
+
+```
+#12      2.2s   5.0Hz [  OK ] ts=3 vel=(  +0, +63,  +0) whl=1 fire=0 tai=0 hand=0 ang=0 spd=1 mg=0 crc=OK [A4 00 3F 00 40 80 xx]
+```
+
+Ctrl+C で停止すると送信統計サマリを表示します。
+
+```
+--- 50 frames / 10.0s (avg 5.00 Hz) ---
+```
+
+### オプション
+
+| 引数 | 説明 | デフォルト |
+|---|---|---|
+| `--port` | シリアルポート（指定しなければ従来のJSON出力モード） | なし |
+| `--baudrate` | ボーレート | 115200 |
+| `--hz` | マイコンへの送信レート [Hz] | 5 |
+| `--dry-run` | シリアル接続なしでフレームを画面表示 | - |
+
+詳細なプロトコル仕様・ボタン割り当て・トラブルシューティングは [README_transmitter.md](README_transmitter.md) を参照してください。
+
 ## コントローラープロファイル
 
 コントローラーの定義（ベンダー/プロダクトID、ボタンマッピング、軸設定）は YAML ファイルで管理されています。
@@ -282,5 +341,21 @@ dpad:
 ## テスト
 
 ```bash
-uv run pytest tests/ -v
+# 全テスト
+uv run python -m pytest tests/ -v
+
+# TKG Transmitter のテストのみ（47件）
+uv run python -m pytest tests/test_tkg_transmitter.py -v
 ```
+
+TKG Transmitter のテストはモックを使用するため、コントローラーやシリアルデバイスがなくても実行できます。
+
+| テストカテゴリ | 件数 | 検証内容 |
+|---|---|---|
+| CRC8計算 | 5 | 全ゼロ入力、既知パターン、データ変更時の変化 |
+| Header組み立て | 8 | ESTOP/DATATYPE/TIMESTAMPの各ビット配置 |
+| FIRING組み立て | 7 | 各フィールドのビット位置 |
+| OPT2組み立て | 6 | BODY_SPEED_MODE/MG_ACTIONのビット位置 |
+| duty変換 | 7 | 境界値・クランプ処理 |
+| ワイヤーフォーマット | 6 | ASCII hex表現、カンマ区切り、CRLF終端 |
+| build_frame統合 | 8 | フレーム長、CRC整合性、ESTOP制御 |

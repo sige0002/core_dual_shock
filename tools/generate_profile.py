@@ -133,6 +133,46 @@ def detect_button(dev: evdev.InputDevice, prompt: str) -> int | None:
     return None
 
 
+def _detect_hat_axis(
+    dev: evdev.InputDevice, prompt: str,
+) -> int | None:
+    """十字キーのHAT軸を1方向検出する.
+
+    ABS_HAT系コード（code >= 16）のみを対象とし、スティックのドリフトを無視する。
+    """
+    print(f"  {prompt}")
+    print("  （操作してください。スキップする場合は Enter を押す）")
+
+    import select
+
+    start = time.monotonic()
+    timeout = 5.0
+
+    while time.monotonic() - start < timeout:
+        r, _, _ = select.select([dev.fd], [], [], 0.1)
+        if not r:
+            sr, _, _ = select.select([sys.stdin], [], [], 0)
+            if sr:
+                sys.stdin.readline()
+                print("  → スキップ\n")
+                return None
+            continue
+
+        for event in dev.read():
+            if event.type != ecodes.EV_ABS:
+                continue
+            # HAT軸のみ対象（ABS_HAT0X=16以降）。スティック軸を除外
+            if event.code < 16:
+                continue
+            if event.value != 0:
+                name = ecodes.ABS.get(event.code, f"unknown({event.code})")
+                print(f"  → 検出: code={event.code} ({name})\n")
+                return event.code
+
+    print("  → 検出されませんでした\n")
+    return None
+
+
 def detect_dpad(
     dev: evdev.InputDevice,
 ) -> tuple[str, dict[str, int | None]]:
@@ -150,7 +190,6 @@ def detect_dpad(
 
     start = time.monotonic()
     timeout = 5.0
-    is_hat = False
     hat_codes: dict[str, int] = {}
     button_codes: dict[str, int] = {}
 
@@ -160,17 +199,12 @@ def detect_dpad(
             continue
 
         for event in dev.read():
-            if event.type == ecodes.EV_ABS:
-                # HAT方式
-                is_hat = True
+            if event.type == ecodes.EV_ABS and event.code >= 16:
+                # HAT方式（ABS_HAT系のみ）
                 name = ecodes.ABS.get(event.code, f"unknown({event.code})")
                 print(f"  → HAT方式を検出: code={event.code} ({name})\n")
-                # HAT0X と HAT0Y を推定
-                # 上を押したので ABS_HAT0Y のはず (value = -1)
                 if event.value != 0:
                     hat_codes["hat_y"] = event.code
-                    # hat_x は隣のコード
-                    hat_codes["hat_x"] = event.code - 1
                     break
             elif event.type == ecodes.EV_KEY and event.value == 1:
                 # ボタン方式
@@ -182,7 +216,13 @@ def detect_dpad(
         if hat_codes or button_codes:
             break
 
-    if is_hat and hat_codes:
+    if hat_codes:
+        # hat_x も個別に検出
+        while dev.read_one():
+            pass
+        hat_x = _detect_hat_axis(dev, "十字キーの「右」を押してください")
+        if hat_x is not None:
+            hat_codes["hat_x"] = hat_x
         return "hat", hat_codes
 
     # ボタン方式の場合、残りの方向も検出

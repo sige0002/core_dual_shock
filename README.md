@@ -21,6 +21,10 @@ src/core_dual_shock/
 └── profiles/
     ├── dualshock4.yaml  # DualShock4のボタン/軸/デバイスID定義
     └── dualsense.yaml   # DualSenseのボタン/軸/デバイスID定義
+
+tools/
+├── generate_profile.py        # コントローラープロファイル対話生成ツール
+└── virtual_serial_receiver.py # 仮想シリアル受信ツール
 ```
 
 **処理の流れ:**
@@ -292,7 +296,19 @@ src/core_dual_shock/profiles/
 └── dualsense.yaml
 ```
 
-### 新しいコントローラーを追加する
+### プロファイル生成ツール
+
+接続中のコントローラーを対話的に操作して、YAMLプロファイルを自動生成できます。
+
+```bash
+uv run python tools/generate_profile.py
+```
+
+画面の指示に従って各スティック・トリガー・ボタンを操作すると、evdevコードを自動検出してYAMLを生成します。生成後、`profiles/` への保存も選択できます。
+
+同じ機種のコントローラーでも、接続方法（USB / Bluetooth）やカーネルドライバの違いにより軸コードが異なる場合があります。入力が正しく反映されない場合は、このツールで実際のマッピングを確認してください。
+
+### 新しいコントローラーを手動で追加する
 
 Python コードを編集する必要はありません。`profiles/` に YAML ファイルを追加するだけで対応できます。
 
